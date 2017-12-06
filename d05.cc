@@ -5,26 +5,18 @@
 
 using namespace std;
 
-int p1(const vector<int> & initial_maze){
-  vector<int> maze(initial_maze);
+int p1(vector<int> maze){
   int step = 0;
-  vector<int>::iterator it = maze.begin();
-
-  while (it >= maze.begin() && it < maze.end()) {
+  for (vector<int>::iterator it = maze.begin(); it >= maze.begin() && it < maze.end(); ++step) {
     it += (*it)++;
-    ++step;
   }
   return step;
 }
 
-int p2(const vector<int> & initial_maze){
-  vector<int> maze(initial_maze);
+int p2(vector<int> maze){
   int step = 0;
-  vector<int>::iterator it = maze.begin();
-
-  while (it >= maze.begin() && it < maze.end()) {
+  for (vector<int>::iterator it = maze.begin(); it >= maze.begin() && it < maze.end(); ++step) {
     it += (*it < 3 ? (*it)++ : (*it)--);
-    ++step;
   }
   return step;
 }

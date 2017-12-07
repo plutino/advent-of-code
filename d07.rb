@@ -7,7 +7,7 @@ def parse_data(file)
       children = tokens[1]&.split(',')&.map(&:strip) || []
       res[key] = {
         weight: weight.to_i,
-        children: children
+        children: children,
       }
     end
     res
@@ -15,7 +15,7 @@ def parse_data(file)
 end
 
 def p1(data)
-  data.keys - data.map { |k, v| v[:children] }.flatten.uniq
+  (data.keys - data.map { |k, v| v[:children] }.flatten.uniq).first
 end
 
 def weight(root, data)
@@ -30,6 +30,6 @@ def weight(root, data)
   child_weights.inject(0){|s, w| s+w} + data[root][:weight]
 end
 
-def p2(root, data)
-  weight(root, data)
+def p2(data)
+  weight(p1(data), data)
 end

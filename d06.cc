@@ -9,8 +9,7 @@ using namespace std;
 const int init_v[] = { 10, 3, 15, 10, 5, 15, 5, 15, 9, 2, 5, 8, 5, 2, 3, 6 };
 const vector<int> initial_banks(init_v, init_v + sizeof(init_v)/sizeof(int));
 
-int p1(const vector<int> & initial_banks) {
-  vector<int> banks(initial_banks);
+int p1(vector<int> banks) {
   set< vector<int> > snapshots;
 
   int count = 0;
@@ -28,8 +27,7 @@ int p1(const vector<int> & initial_banks) {
   return count;
 }
 
-int p2(const vector<int> & initial_banks) {
-  vector<int> banks(initial_banks);
+int p2(vector<int> banks) {
   map< vector<int>, int> snapshots;
 
   int count = 0;

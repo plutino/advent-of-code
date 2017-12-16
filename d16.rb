@@ -40,7 +40,7 @@ def find_loop(moves, start_line)
   line = start_line
 
   until line_cache.include?(line)
-    line_cache << line
+    line_cache << line.dup
     line = dance(moves, line)
   end
 

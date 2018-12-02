@@ -1,3 +1,5 @@
-# advent-of-code-2017
+# advent-of-code solutions
 
-https://adventofcode.com/2017
+This repo has my solution for Advent of Code problems.
+
+https://adventofcode.com

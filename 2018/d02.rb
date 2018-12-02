@@ -1,3 +1,5 @@
+# https://adventofcode.com/2018/day/2
+
 def p1(data)
   counts = data.map { |str| str.split('').group_by{ |v| v }.map{ |k, v| v.size } }
   two_counts = counts.select {|ct| ct.include?(2)}.size

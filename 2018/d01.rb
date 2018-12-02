@@ -1,3 +1,5 @@
+# https://adventofcode.com/2018/day/1
+
 require 'set'
 
 def p1(data)

@@ -1,5 +1,7 @@
 # https://adventofcode.com/2018/day/3
 
+require 'set'
+
 class FabricCell
   attr_accessor :x, :y
 
@@ -17,15 +19,15 @@ class Fabric
     @reused = Set.new
   end
 
-  def mark_reused!(cell)
+  def use_or_reuse!(cell)
     if used?(cell)
       @reused << serialize(cell)
     else
-      @used << serialize(cell)
+      use! cell
     end
   end
 
-  def mark_used!(cell)
+  def use!(cell)
     @used << serialize(cell)
   end
 
@@ -71,8 +73,8 @@ class Cloth
     false
   end
 
-  def mark_used_in!(fabric)
-    for_each_cell { |cell| fabric.mark_used! cell }
+  def use_in!(fabric)
+    for_each_cell { |cell| fabric.use! cell }
   end
 end
 
@@ -87,7 +89,7 @@ end
 def p1(clothes)
   fabric = Fabric.new
   clothes.each do |cloth|
-    cloth.for_each_cell { |cell| fabric.mark_reused!(cell) }
+    cloth.for_each_cell { |cell| fabric.use_or_reuse!(cell) }
   end
   fabric.reused.count
 end
@@ -101,7 +103,7 @@ def p2(clothes)
     end
 
     cleared_cloth_ids << cloth.id unless cloth.used_in?(fabric)
-    cloth.mark_used_in! fabric
+    cloth.use_in! fabric
   end
   cleared_cloth_ids
 end

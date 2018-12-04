@@ -1,8 +1,6 @@
 # https://adventofcode.com/2018/day/4
 
 class SleepSession
-  attr_reader :starts_at, :ends_at
-
   def initialize(starts_at, ends_at)
     @starts_at = starts_at
     @ends_at = ends_at
@@ -10,6 +8,33 @@ class SleepSession
 
   def duration
     @ends_at - @starts_at
+  end
+
+  def minutes
+    (@starts_at ... @ends_at).to_enum
+  end
+end
+
+class DutyLog
+  attr_reader :guard_id
+
+  def initialize(guard_id)
+    @guard_id = guard_id
+    @sleep_sessions = []
+  end
+
+  def <<(sleep_session)
+    @sleep_sessions << sleep_session
+  end
+
+  def sleep_minutes
+    Enumerator.new do |y|
+      @sleep_sessions.each { |session| session.minutes.each { |e| y << e } }
+    end
+  end
+
+  def total_sleep
+    @sleep_sessions.map(&:duration).inject(0, :+)
   end
 end
 
@@ -45,36 +70,10 @@ class Guard
     minute_counts = Array.new(60, 0)
 
     @logs.each do |log|
-      log.for_each_sleep do |sleep_session|
-        (sleep_session.starts_at ... sleep_session.ends_at).each { |min| minute_counts[min] += 1}
-      end
+      log.sleep_minutes.each { |min| minute_counts[min] += 1 }
     end
 
     minute_counts.each_with_index.max
-  end
-end
-
-
-class DutyLog
-  attr_reader :guard_id
-
-  def initialize(guard_id)
-    @guard_id = guard_id
-    @sleep_sessions = []
-  end
-
-  def <<(sleep_session)
-    @sleep_sessions << sleep_session
-  end
-
-  def for_each_sleep
-    @sleep_sessions.each do |sleep_session|
-      yield sleep_session
-    end
-  end
-
-  def total_sleep
-    @sleep_sessions.map(&:duration).inject(0, :+)
   end
 end
 

@@ -1,33 +1,91 @@
+#https://adventofcode.com/2018/day/6
+
 require 'set'
 
-def distance(x1, y1, x2, y2)
-  (x1 - x2).abs + (y1 - y2).abs
-end
+class Point
+  attr_reader :x, :y
 
-def serialize(x, y)
-  1000000 * x + y
+  def initialize(x, y)
+    @x = x
+    @y = y
+  end
+
+  def serialized
+    1000000 * x + y
+  end
+
+  def distance_to(p2)
+    (x - p2.x).abs + (y - p2.y).abs
+  end
+
+  def before
+    Point.new(x-1, y)
+  end
+
+  def after
+    Point.new(x+1, y)
+  end
+
+  def above
+    Point.new(x, y-1)
+  end
+
+  def below
+    Point.new(x, y+1)
+  end
 end
 
 class Ground
-  attr_reader :coordinates, :range
+  attr_reader :coordinates
 
   def initialize(coordinates)
     @coordinates = coordinates
-    @range = {
-      x_lo: coordinates.map(&:x).min,
-      x_hi: coordinates.map(&:x).max,
-      y_lo: coordinates.map(&:y).min,
-      y_hi: coordinates.map(&:y).max,
-    }
+    @coordinates.each { |coord| coord.ground = self }
+
+    @x_lo = coordinates.map(&:point).map(&:x).min
+    @x_hi = coordinates.map(&:point).map(&:x).max
+    @y_lo = coordinates.map(&:point).map(&:y).min
+    @y_hi = coordinates.map(&:point).map(&:y).max
+
     @region = Set.new
   end
 
-  def coord_for(x, y)
+  def edge_point?(point)
+    point.x == @x_lo || point.x == @x_hi || point.y == @y_lo || point.y == @y_hi
+  end
+
+  def edge_points
+    Enumerator.new do |enu|
+      (@x_lo .. @x_hi).each do |x|
+        [@y_lo, @y_hi].each do |y|
+          enu << Point.new(x, y)
+        end
+      end
+
+      [@x_lo, @x_hi].each do |x|
+        ((@y_lo + 1) .. (@y_hi - 1)).each do |y|
+          enu << Point.new(x, y)
+        end
+      end
+    end
+  end
+
+  def points
+    Enumerator.new do |enu|
+      (@x_lo .. @x_hi).each do |x|
+        (@y_lo .. @y_hi).each do |y|
+          enu << Point.new(x, y)
+        end
+      end
+    end
+  end
+
+  def coord_for(point)
     min_distance = 10000000
     min_coord = nil
     doubled = false
     @coordinates.each do |coord|
-      d = distance(x, y, coord.x, coord.y)
+      d = coord.point.distance_to(point)
       return coord if d == 0
       if (d < min_distance)
         min_distance = d
@@ -47,37 +105,34 @@ class Ground
 
   private
 
-  def distance_to_all(x, y)
-    @coordinates.map{|coord| distance(x, y, coord.x, coord.y)}.inject(0, :+)
+  def distance_to_all(point)
+    @coordinates.map{ |coord| coord.point.distance_to(point) }.inject(0, :+)
   end
 
   def starting_point(max_distances)
-      (@range[:x_lo]..@range[:x_hi]).each do |x|
-        (@range[:y_lo]..@range[:y_hi]).each do |y|
-          return [x, y] if (distance_to_all(x, y) < max_distances)
-        end
-      end
+    points.each do |point|
+      return point if (distance_to_all(point) < max_distances)
+    end
   end
 
-  def find_region(x, y, max_distances, searched)
-    return if searched.include?(serialize(x, y))
-    if distance_to_all(x, y) < limit
-      @region << [x, y]
-      searched << serialize(x, y)
-      find_region(x-1, y, max_distances, searched)
-      find_region(x+1, y, max_distances, searched)
-      find_region(x, y-1, max_distances, searched)
-      find_region(x, y+1, max_distances, searched)
+  def find_region(point, max_distances, searched)
+    return if searched.include?(point.serialized)
+    if distance_to_all(point) < max_distances
+      @region << point
+      searched << point.serialized
+      find_region(point.before, max_distances, searched)
+      find_region(point.after, max_distances, searched)
+      find_region(point.above, max_distances, searched)
+      find_region(point.below, max_distances, searched)
     end
   end
 end
 
 class Coordinate
-  attr_reader :x, :y
+  attr_reader :point
 
-  def initialize(x, y)
-    @x = x
-    @y = y
+  def initialize(point)
+    @point = point
     @area = 0
   end
 
@@ -90,55 +145,42 @@ class Coordinate
   end
 
   def area
-    find_area(x, y, Set.new) if @area == 0
+    find_area(@point, Set.new) if @area == 0
     @area
   end
 
   private
 
-  def find_area(x, y, searched)
-    return if searched.include?(serialize(x, y))
-    return if x == @ground.range[:x_lo] || x == @ground.range[:x_hi]
-    return if y == @ground.range[:y_lo] || y == @ground.range[:y_hi]
+  def find_area(point, searched)
+    return if searched.include?(point.serialized)
+    return if @ground.edge_point?(point)
 
-    if @ground.coord_for(x, y) == self
+    if @ground.coord_for(point) == self
       @area += 1
-      searched << serialize(x, y)
-      find_area(x-1, y, searched)
-      find_area(x+1, y, searched)
-      find_area(x, y-1, searched)
-      find_area(x, y+1, searched)
+      searched << point.serialized
+      find_area(point.before, searched)
+      find_area(point.after, searched)
+      find_area(point.above, searched)
+      find_area(point.below, searched)
     end
   end
 end
 
-def parse_data(data)
-  data.map {|d| Coordinate.new(d.first, d.last)}
+def parse_data(lines)
+  coords = lines.map { |ln| Coordinate.new(Point.new(*(ln.split(',').map(&:to_i)))) }
+  Ground.new(coords)
 end
 
-def p1 coords
-  ground = Ground.new(coords)
-  coords.each {|coord| coord.ground = ground}
-
-  # if area of a coordinate reaches one edge, it's infinite, removing them from the list
-  (ground.range[:x_lo]..ground.range[:x_hi]).each do |x|
-    [ground.range[:y_lo], ground.range[:y_hi]].each do |y|
-      coord = ground.coord_for(x, y)
-      coord.mark_infinity if coord
-    end
+def p1 ground
+  # if area of a coordinate reaches one edge, it's infinite, finding these first
+  ground.edge_points.each do |point|
+    coord = ground.coord_for(point)
+    coord.mark_infinity if coord
   end
 
-  [ground.range[:x_lo], ground.range[:x_hi]].each do |x|
-    ((ground.range[:y_lo] + 1)..(ground.range[:y_hi] - 1)).each do |y|
-      coord = ground.coord_for(x, y)
-      coord.mark_infinity if coord
-    end
-  end
-
-  coords.map(&:area).max
+  ground.coordinates.map(&:area).max
 end
 
-def p2 coords, max_distances
-  ground = Ground.new(coords)
+def p2 ground, max_distances
   ground.region_within(max_distances).size
 end
